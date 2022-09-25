@@ -125,10 +125,10 @@ DJOSER = {
         # 'user_list': ('api.permissions.OwnerAndAdminOrReadOnly',),
     },
     'SERIALIZERS': {
-        'user': 'api.serializers.UserSerializer',
-        'user_list': 'api.serializers.UserSerializer',
-        'current_user': 'api.serializers.UserSerializer',
-        'user_create': 'api.serializers.UserSerializer',
+        # 'user': 'api.serializers.UserSerializer',
+        # 'user_list': 'api.serializers.UserSerializer',
+        # 'current_user': 'api.serializers.UserSerializer',
+        # 'user_create': 'api.serializers.UserSerializer',
     },
 }
 

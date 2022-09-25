@@ -7,9 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from api.paginators import PageNumberLimitPagination
 from api.permissions import AdminOrReadOnly
-from api.serializers import UserSerializer
-from recipes.models import Ingredient
+from api.serializers import IngredientSerializer, TagSerializer, UserSerializer
+from recipes.models import Ingredient, Tag
 
 User = get_user_model()
 
@@ -53,20 +54,19 @@ class UserViewSet(DjoserUserViewSet):
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
+    pagination_class = None
     permission_classes = (AdminOrReadOnly,)
+    serializer_class = IngredientSerializer
 
     def get_queryset(self):
         name = self.request.query_params.get('name')
-        queryset = self.queryset
         if name:
-            if name[0] == '%':
-                name = unquote(name)
-            name = name.lower()
-            stw_queryset = list(queryset.filter(name__startswith=name))
-            cnt_queryset = queryset.filter(name__contains=name)
-            stw_queryset.extend(
-                [i for i in cnt_queryset if i not in stw_queryset]
-            )
-            queryset = stw_queryset
-        return queryset
+            return self.queryset.filter(name__contains=name)
+        return self.queryset
+
+
+class TagViewSet(ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    pagination_class = None
+    permission_classes = (AdminOrReadOnly,)
+    serializer_class = TagSerializer

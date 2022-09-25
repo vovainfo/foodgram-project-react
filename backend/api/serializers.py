@@ -1,5 +1,10 @@
+import string
+
 from django.contrib.auth import get_user_model
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import (ModelSerializer, SerializerMethodField,
+                                        ValidationError)
+
+from recipes.models import Ingredient, Tag
 
 User = get_user_model()
 
@@ -37,3 +42,17 @@ class UserSerializer(ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+
+class IngredientSerializer(ModelSerializer):
+    class Meta:
+        model = Ingredient
+        fields = '__all__'
+        read_only_fields = ('name', 'measurement_unit')
+
+
+class TagSerializer(ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = '__all__'
+        read_only_fields = ('name', 'color', 'slug')
