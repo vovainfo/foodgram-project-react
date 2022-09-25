@@ -1,3 +1,4 @@
 django==2.2.16
 djangorestframework==3.12.4
 djoser==2.1.0
+drf-extra-fields=3.4.0
