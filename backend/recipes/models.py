@@ -119,8 +119,8 @@ class RecipeIngredientLink(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Ингридиенты'
-        verbose_name_plural = 'Ингридиенты'
+        verbose_name = 'Ингридиенты в рецепте'
+        verbose_name_plural = 'Ингридиенты в рецепте'
         ordering = ('recipe', )
         constraints = (
             models.UniqueConstraint(
