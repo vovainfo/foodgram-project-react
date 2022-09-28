@@ -93,10 +93,9 @@ class RecipeSerializer(ModelSerializer):
         )
 
     def get_ingredients(self, obj):
-        ingredients = obj.ingredients.values(
+        return obj.ingredients.values(
             'id', 'name', 'measurement_unit', amount=F('recipe__amount')
         )
-        return ingredients
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
@@ -114,7 +113,6 @@ class RecipeSerializer(ModelSerializer):
         name = str(self.initial_data.get('name'))
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
-        values_as_list = (tags, ingredients)
 
         if not isinstance(tags, list):
             raise ValidationError('Некорректный список тэгов')
@@ -134,10 +132,6 @@ class RecipeSerializer(ModelSerializer):
             ingredient = ingredient_queryset[0]
 
             amount = ingr.get('amount')
-            if not amount.isdecimal():
-                raise ValidationError(
-                    f'некорректное количество ингредиента {ingr} - {amount}'
-                )
 
             valid_ingredient_amount.append(
                 {'ingredient': ingredient, 'amount': amount}
@@ -191,3 +185,28 @@ class RecipeSerializer(ModelSerializer):
 
         recipe.save()
         return recipe
+
+
+class UserSubscribeSerializer(UserSerializer):
+    recipes = RecipeLiteSerializer(many=True, read_only=True)
+    recipes_count = SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count',
+        )
+        read_only_fields = '__all__',
+
+    def get_is_subscribed(*args):
+        return True
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
