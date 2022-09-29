@@ -14,15 +14,8 @@ class UserSerializer(ModelSerializer):
 
     class Meta:
         model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'password',
-        )
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'password')
         extra_kwargs = {'password': {'write_only': True}}
         read_only_fields = ('is_subscribed',)
 
@@ -37,7 +30,7 @@ class UserSerializer(ModelSerializer):
             email=validated_data['email'],
             username=validated_data['username'],
             first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
+            last_name=validated_data['last_name']
         )
         user.set_password(validated_data['password'])
         user.save()
@@ -61,8 +54,8 @@ class TagSerializer(ModelSerializer):
 class RecipeLiteSerializer(ModelSerializer):
     class Meta:
         model = Recipe
-        fields = 'id', 'name', 'image', 'cooking_time'
-        read_only_fields = '__all__',
+        fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class RecipeSerializer(ModelSerializer):
@@ -75,22 +68,10 @@ class RecipeSerializer(ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = (
-            'id',
-            'tags',
-            'author',
-            'ingredients',
-            'is_favorited',
-            'is_in_shopping_cart',
-            'name',
-            'image',
-            'text',
-            'cooking_time',
-        )
-        read_only_fields = (
-            'is_favorite',
-            'is_shopping_cart',
-        )
+        fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited',
+                  'is_in_shopping_cart', 'name', 'image', 'text',
+                  'cooking_time')
+        read_only_fields = ('is_favorite', 'is_shopping_cart')
 
     def get_ingredients(self, obj):
         return obj.ingredients.values(
@@ -182,7 +163,6 @@ class RecipeSerializer(ModelSerializer):
                     ingredients=ingredient['ingredient'],
                     amount=ingredient['amount']
                 )
-
         recipe.save()
         return recipe
 
@@ -193,17 +173,11 @@ class UserSubscribeSerializer(UserSerializer):
 
     class Meta:
         model = User
-        fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
-            'is_subscribed',
-            'recipes',
-            'recipes_count',
-        )
-        read_only_fields = '__all__',
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count')
+        read_only_fields = ('email', 'id', 'username', 'first_name',
+                            'last_name', 'is_subscribed', 'recipes',
+                            'recipes_count')
 
     def get_is_subscribed(*args):
         return True

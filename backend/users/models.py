@@ -6,30 +6,21 @@ class User(AbstractUser):
     username = models.CharField(
         verbose_name='Имя пользователя',
         max_length=150,
-        unique=True,
+        unique=True
     )
     email = models.EmailField(
         verbose_name='Электронная почта',
         max_length=254,
-        unique=True,
+        unique=True
     )
-    first_name = models.CharField(
-        verbose_name='Имя',
-        max_length=150,
-    )
-    last_name = models.CharField(
-        verbose_name='Фамилия',
-        max_length=150,
-    )
-    password = models.CharField(
-        verbose_name='Пароль',
-        max_length=150,
-    )
+    first_name = models.CharField(verbose_name='Имя', max_length=150)
+    last_name = models.CharField(verbose_name='Фамилия', max_length=150)
+    password = models.CharField(verbose_name='Пароль', max_length=150)
     subscribe = models.ManyToManyField(
         'self',
         verbose_name='Подписка',
         related_name='subscribers',
-        symmetrical=False,
+        symmetrical=False
     )
 
     class Meta:
