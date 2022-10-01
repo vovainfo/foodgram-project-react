@@ -34,3 +34,7 @@ class RecipeAdmin(admin.ModelAdmin):
 class RecipeIngredientLinkAdmin(admin.ModelAdmin):
     list_display = ('recipe', 'ingredients', 'amount')
     empty_value_display = '-пусто-'
+
+# Здесь было замечание "В админку лучше добавить все модели.".
+# Но у меня и так все модели в админке. Единственное, модель User в админке
+# в другом приложении. Но это же правильно?

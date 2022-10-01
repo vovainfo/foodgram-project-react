@@ -1,7 +1,9 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import F, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status
 from rest_framework.decorators import action
@@ -9,6 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
+from api.filters import RecipeFilter
 from api.permissions import AdminOrReadOnly, OwnerAndAdminOrReadOnly
 from api.serializers import (IngredientSerializer, RecipeLiteSerializer,
                              RecipeSerializer, TagSerializer, UserSerializer,
@@ -16,6 +19,7 @@ from api.serializers import (IngredientSerializer, RecipeLiteSerializer,
 from recipes.models import Ingredient, Recipe, RecipeIngredientLink, Tag
 
 User = get_user_model()
+CONTENT_TYPE_SHOPPING_FILE = 'text/plain'
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -79,35 +83,8 @@ class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.select_related('author')
     serializer_class = RecipeSerializer
     permission_classes = (OwnerAndAdminOrReadOnly,)
-
-    def get_queryset(self):
-        queryset = self.queryset
-
-        tags = self.request.query_params.getlist('tags')
-        if tags:
-            queryset = queryset.filter(tags__slug__in=tags).distinct()
-
-        author = self.request.query_params.get('author')
-        if author:
-            queryset = queryset.filter(author=author)
-
-        user = self.request.user
-        if user.is_anonymous:
-            return queryset
-
-        is_in_shopping = self.request.query_params.get('is_in_shopping_cart')
-        if is_in_shopping == '1':
-            queryset = queryset.filter(cart=user.id)
-        elif is_in_shopping == '0':
-            queryset = queryset.exclude(cart=user.id)
-
-        is_favorited = self.request.query_params.get('is_favorited')
-        if is_favorited == '1':
-            queryset = queryset.filter(favorite=user.id)
-        if is_favorited == '0':
-            queryset = queryset.exclude(favorite=user.id)
-
-        return queryset  # noqa: R504
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def __add_del_m2m(self, pk, m2m) -> Response:
         user = self.request.user
@@ -152,6 +129,9 @@ class RecipeViewSet(ModelViewSet):
         rows = [f'{i["ing"]} ({i["unit"]}) - {i["cnt"]}' for i in ingredients]
         shopping_text = f'Список покупок {str(user)}\n\n' + '\n'.join(rows)
 
-        response = HttpResponse(shopping_text, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename=list.txt'
+        response = HttpResponse(shopping_text,
+                                content_type=CONTENT_TYPE_SHOPPING_FILE)
+        response['Content-Disposition'] = (
+            f'attachment; filename={settings.SHOPPING_FILE}'
+        )
         return response

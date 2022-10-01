@@ -1,8 +1,11 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.db.models import F
 from drf_extra_fields.fields import Base64ImageField
-from rest_framework.serializers import (ModelSerializer, SerializerMethodField,
-                                        ValidationError)
+from rest_framework.serializers import (CurrentUserDefault, ModelSerializer,
+                                        SerializerMethodField, ValidationError)
+from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import Ingredient, Recipe, RecipeIngredientLink, Tag
 
@@ -10,7 +13,7 @@ User = get_user_model()
 
 
 class UserSerializer(ModelSerializer):
-    is_subscribed = SerializerMethodField()
+    is_subscribed = SerializerMethodField(method_name='get_is_subscribed')
 
     class Meta:
         model = User
@@ -42,6 +45,12 @@ class IngredientSerializer(ModelSerializer):
         model = Ingredient
         fields = '__all__'
         read_only_fields = ('name', 'measurement_unit')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Ingredient.objects.all(),
+                fields=('name', 'measurement_unit')
+            )
+        ]
 
 
 class TagSerializer(ModelSerializer):
@@ -60,10 +69,18 @@ class RecipeLiteSerializer(ModelSerializer):
 
 class RecipeSerializer(ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
-    author = UserSerializer(read_only=True)
-    ingredients = SerializerMethodField()
-    is_favorited = SerializerMethodField()
-    is_in_shopping_cart = SerializerMethodField()
+
+    # ранее было просто author = UserSerializer(read_only=True) но ты попросил
+    # UniqueTogetherValidator добавить. Для этого я здесь прописал
+    # default=CurrentUserDefault() и в Meta.read_only_fields добавил 'author'.
+    # вроде работает, но полного понимания нет,
+    # делал почти научным тыком. Корректно сделал?
+    author = UserSerializer(read_only=True, default=CurrentUserDefault())
+    ingredients = SerializerMethodField(method_name='get_ingredients')
+    is_favorited = SerializerMethodField(method_name='get_is_favorited')
+    is_in_shopping_cart = SerializerMethodField(
+        method_name='get_is_in_shopping_cart'
+    )
     image = Base64ImageField()
 
     class Meta:
@@ -71,7 +88,13 @@ class RecipeSerializer(ModelSerializer):
         fields = ('id', 'tags', 'author', 'ingredients', 'is_favorited',
                   'is_in_shopping_cart', 'name', 'image', 'text',
                   'cooking_time')
-        read_only_fields = ('is_favorite', 'is_shopping_cart')
+        read_only_fields = ('is_favorite', 'is_shopping_cart', 'author')
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Recipe.objects.all(),
+                fields=('name', 'author')
+            )
+        ]
 
     def get_ingredients(self, obj):
         return obj.ingredients.values(
@@ -90,8 +113,8 @@ class RecipeSerializer(ModelSerializer):
             return False
         return user.carts.filter(id=obj.id).exists()
 
-    def validate(self, data):
-        name = str(self.initial_data.get('name'))
+    def validate(self, data):  # noqa: max-complexity: 11
+        name = self.initial_data.get('name')
         tags = self.initial_data.get('tags')
         ingredients = self.initial_data.get('ingredients')
 
@@ -104,15 +127,38 @@ class RecipeSerializer(ModelSerializer):
             if not Tag.objects.filter(id=tag).exists():
                 raise ValidationError(f'некорректный тэг {tag}')
 
+        # В ReDoc заявлено, что поле cooking_time integer, а фронт посылает
+        # строку. Для универсальности, привожу к строке
+        cooking_time = str(self.initial_data.get('cooking_time'))
+        if not cooking_time.isdigit():
+            raise ValidationError(
+                'Время приготовления не является целым числом'
+            )
+        if int(cooking_time) < settings.RECIPE_MIN_COOKING_TIME:
+            raise ValidationError(
+                f'Время приготовления меньше {settings.RECIPE_MIN_AMOUNT}'
+            )
+
         valid_ingredient_amount = []
         for ingr in ingredients:
             ingr_id = ingr.get('id')
             ingredient_queryset = Ingredient.objects.filter(id=ingr_id)
-            if not ingredient_queryset:
+            if not ingredient_queryset.exists():
                 raise ValidationError(f'некорректный ингредиент {ingr}')
             ingredient = ingredient_queryset[0]
 
-            amount = ingr.get('amount')
+            # В ReDoc заявлено, что поле amount integer, а фронт посылает
+            # строку. Для универсальности, привожу к строке
+            amount = str(ingr.get('amount'))
+            if not amount.isdigit():
+                raise ValidationError(
+                    f'Кол-во у <{ingredient.name}> не является целым числом'
+                )
+            if int(amount) < settings.RECIPE_MIN_AMOUNT:
+                raise ValidationError(
+                    f'Кол-во у <{ingredient.name}> меньше '
+                    f'{settings.RECIPE_MIN_AMOUNT}'
+                )
 
             valid_ingredient_amount.append(
                 {'ingredient': ingredient, 'amount': amount}
@@ -124,6 +170,7 @@ class RecipeSerializer(ModelSerializer):
         data['author'] = self.context.get('request').user
         return data
 
+    @transaction.atomic
     def create(self, validated_data):
         image = validated_data.pop('image')
         tags = validated_data.pop('tags')
@@ -140,6 +187,7 @@ class RecipeSerializer(ModelSerializer):
 
         return recipe
 
+    @transaction.atomic
     def update(self, recipe, validated_data):
         tags = validated_data.get('tags')
         ingredients = validated_data.get('ingredients')
@@ -169,7 +217,7 @@ class RecipeSerializer(ModelSerializer):
 
 class UserSubscribeSerializer(UserSerializer):
     recipes = RecipeLiteSerializer(many=True, read_only=True)
-    recipes_count = SerializerMethodField()
+    recipes_count = SerializerMethodField(method_name='get_recipes_count')
 
     class Meta:
         model = User
