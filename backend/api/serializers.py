@@ -45,12 +45,12 @@ class IngredientSerializer(ModelSerializer):
         model = Ingredient
         fields = '__all__'
         read_only_fields = ('name', 'measurement_unit')
-        validators = [
+        validators = (
             UniqueTogetherValidator(
                 queryset=Ingredient.objects.all(),
                 fields=('name', 'measurement_unit')
-            )
-        ]
+            ),
+        )
 
 
 class TagSerializer(ModelSerializer):
@@ -70,11 +70,6 @@ class RecipeLiteSerializer(ModelSerializer):
 class RecipeSerializer(ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
 
-    # ранее было просто author = UserSerializer(read_only=True) но ты попросил
-    # UniqueTogetherValidator добавить. Для этого я здесь прописал
-    # default=CurrentUserDefault() и в Meta.read_only_fields добавил 'author'.
-    # вроде работает, но полного понимания нет,
-    # делал почти научным тыком. Корректно сделал?
     author = UserSerializer(read_only=True, default=CurrentUserDefault())
     ingredients = SerializerMethodField(method_name='get_ingredients')
     is_favorited = SerializerMethodField(method_name='get_is_favorited')
@@ -89,12 +84,12 @@ class RecipeSerializer(ModelSerializer):
                   'is_in_shopping_cart', 'name', 'image', 'text',
                   'cooking_time')
         read_only_fields = ('is_favorite', 'is_shopping_cart', 'author')
-        validators = [
+        validators = (
             UniqueTogetherValidator(
                 queryset=Recipe.objects.all(),
                 fields=('name', 'author')
-            )
-        ]
+            ),
+        )
 
     def get_ingredients(self, obj):
         return obj.ingredients.values(
@@ -127,8 +122,6 @@ class RecipeSerializer(ModelSerializer):
             if not Tag.objects.filter(id=tag).exists():
                 raise ValidationError(f'некорректный тэг {tag}')
 
-        # В ReDoc заявлено, что поле cooking_time integer, а фронт посылает
-        # строку. Для универсальности, привожу к строке
         cooking_time = str(self.initial_data.get('cooking_time'))
         if not cooking_time.isdigit():
             raise ValidationError(
@@ -136,7 +129,7 @@ class RecipeSerializer(ModelSerializer):
             )
         if int(cooking_time) < settings.RECIPE_MIN_COOKING_TIME:
             raise ValidationError(
-                f'Время приготовления меньше {settings.RECIPE_MIN_AMOUNT}'
+                f'Время приготовления менее {settings.RECIPE_MIN_COOKING_TIME}'
             )
 
         valid_ingredient_amount = []
@@ -147,8 +140,6 @@ class RecipeSerializer(ModelSerializer):
                 raise ValidationError(f'некорректный ингредиент {ingr}')
             ingredient = ingredient_queryset[0]
 
-            # В ReDoc заявлено, что поле amount integer, а фронт посылает
-            # строку. Для универсальности, привожу к строке
             amount = str(ingr.get('amount'))
             if not amount.isdigit():
                 raise ValidationError(

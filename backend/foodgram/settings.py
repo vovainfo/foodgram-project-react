@@ -81,14 +81,6 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-# Пусть пока будет закомментированным. После апрува всего кода удалю.
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),

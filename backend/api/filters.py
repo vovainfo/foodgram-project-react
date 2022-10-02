@@ -1,27 +1,17 @@
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import FilterSet, filters
+from rest_framework.filters import SearchFilter
 
 from recipes.models import Recipe
 
 User = get_user_model()
 
 
-class RecipeFilter(FilterSet):
-    # По твоему указанию попробовал сделать с фильтрами а не с кучей кода
-    # фильтрации в get_queryset вьюсета. Всё почти ок, но есть нюанс.
-    # Проблема с тегами. Если в базе нет записей для какого-то тега,
-    # присутствующего в фильтре, то выпадает ошибка. Например, в справочнике
-    # тегов есть tag1 и tag2. И пусть в базе есть рецепты только с tag1.
-    # Тогда запрос рецептов tags=tag1&tags=tag2 выдасть 400 ошибку.
-    # {"tags": ["Select a valid choice. tag2 is not one of the available
-    # choices."]}
-    # Я нагуглил несколько обсуждений такой проблемы, но решения никто не
-    # предоставил.
-    # Например https://github.com/carltongibson/django-filter/issues/922
-    # Означает ли это, что теги нельзя так фильтровать? Иль можно предположить,
-    # что таких тегов не будет (по хорошему, фронт должен сначала запросить
-    # список допустимых тегов и потом только позволять по ним фильтровать)?
+class IngredientSearchFilter(SearchFilter):
+    search_param = 'name'
 
+
+class RecipeFilter(FilterSet):
     tags = filters.AllValuesMultipleFilter(field_name='tags__slug')
     author = filters.ModelChoiceFilter(queryset=User.objects.all())
     is_favorited = filters.BooleanFilter(method='filter_is_favorited')

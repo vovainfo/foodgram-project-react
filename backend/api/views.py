@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from api.filters import RecipeFilter
+from api.filters import IngredientSearchFilter, RecipeFilter
 from api.permissions import AdminOrReadOnly, OwnerAndAdminOrReadOnly
 from api.serializers import (IngredientSerializer, RecipeLiteSerializer,
                              RecipeSerializer, TagSerializer, UserSerializer,
@@ -64,12 +64,8 @@ class IngredientViewSet(ReadOnlyModelViewSet):
     pagination_class = None
     permission_classes = (AdminOrReadOnly,)
     serializer_class = IngredientSerializer
-
-    def get_queryset(self):
-        name = self.request.query_params.get('name')
-        if name:
-            return self.queryset.filter(name__contains=name)
-        return self.queryset
+    filter_backends = (IngredientSearchFilter,)
+    search_fields = ('^name',)
 
 
 class TagViewSet(ReadOnlyModelViewSet):
