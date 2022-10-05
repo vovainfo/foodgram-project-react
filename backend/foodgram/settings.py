@@ -29,6 +29,11 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Application definition
 
@@ -84,7 +89,7 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': config('DB_NAME', default='foodgram'),
+        'NAME': config('POSTGRES_DB', default='foodgram'),
         'USER': config('POSTGRES_USER', default='foodgram_user'),
         'PASSWORD': config('POSTGRES_PASSWORD', default='foodgram_user'),
         'HOST': config('DB_HOST', default='localhost'),
