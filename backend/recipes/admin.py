@@ -46,7 +46,7 @@ class TagAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'cooking_time', 'count_favorites')
     fields = ('name', 'author', 'cooking_time',
-               'cart', 'tags', 'favorite', 'image')
+              'cart', 'tags', 'favorite', 'image')
 
     search_fields = ('name', )
     list_filter = ('tags', )
