@@ -63,7 +63,8 @@ class Recipe(models.Model):
     favorite = models.ManyToManyField(
         User,
         verbose_name='Избранные рецепты',
-        related_name='favorites'
+        related_name='favorites',
+        blank=True
     )
     tags = models.ManyToManyField(
         Tag,
@@ -73,7 +74,8 @@ class Recipe(models.Model):
     cart = models.ManyToManyField(
         User,
         verbose_name='Список покупок',
-        related_name='carts'
+        related_name='carts',
+        blank=True
     )
     pub_date = models.DateTimeField(
         verbose_name='Дата публикации',

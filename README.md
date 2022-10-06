@@ -38,7 +38,7 @@ sudo docker-compose --version
 
 * Отредактируйте файл infra/nginx.conf, в строке server_name впишите IP своего сервера
 * Скопируйте этот файл на сервер в /home/username/nginx.conf
-* Скопируйте файл docker-compose.yml с корневой директории на сервер в /home/username/
+* Скопируйте файл infra/docker-compose.yml с корневой директории на сервер в /home/username/
 * Файл backend/.env скопируйте в папку /home/username/ и отредайтируйте (например, задав свой SECRET_KEY и POSTGRES_PASSWORD) 
 
 ### Запуск приложения в контейнерах

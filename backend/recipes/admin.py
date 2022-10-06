@@ -18,6 +18,13 @@ class RecipeInlineIngredients(admin.TabularInline):
     verbose_name_plural = 'рецепты с этим ингредиентом'
 
 
+class InlineIngredientsInRecipe(admin.TabularInline):
+    model = Recipe.ingredients.through
+    extra = 1
+    verbose_name = 'Ингредиент'
+    verbose_name_plural = 'Ингредиенты'
+
+
 @register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('name', 'measurement_unit')
@@ -38,9 +45,13 @@ class TagAdmin(admin.ModelAdmin):
 @register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'cooking_time', 'count_favorites')
+    fields = ('name', 'author', 'cooking_time',
+               'cart', 'tags', 'favorite', 'image')
+
     search_fields = ('name', )
-    list_filter = ('tags', 'author')
+    list_filter = ('tags', )
     empty_value_display = '-пусто-'
+    inlines = (InlineIngredientsInRecipe,)
 
     def count_favorites(self, obj):
         return obj.favorite.count()
@@ -49,8 +60,6 @@ class RecipeAdmin(admin.ModelAdmin):
 @register(RecipeIngredientLink)
 class RecipeIngredientLinkAdmin(admin.ModelAdmin):
     list_display = ('recipe', 'ingredients', 'amount')
+    search_fields = ('recipe__author__username', 'recipe__author__email')
+    list_filter = ('recipe__tags',)
     empty_value_display = '-пусто-'
-
-# Здесь было замечание "В админку лучше добавить все модели.".
-# Но у меня и так все модели в админке. Единственное, модель User в админке
-# в другом приложении. Но это же правильно?

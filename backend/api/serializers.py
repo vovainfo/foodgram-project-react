@@ -132,7 +132,7 @@ class RecipeSerializer(ModelSerializer):
                 f'Время приготовления менее {settings.RECIPE_MIN_COOKING_TIME}'
             )
 
-        valid_ingredient_amount = []
+        valid_ingredient = []
         for ingr in ingredients:
             ingr_id = ingr.get('id')
             ingredient_queryset = Ingredient.objects.filter(id=ingr_id)
@@ -151,13 +151,21 @@ class RecipeSerializer(ModelSerializer):
                     f'{settings.RECIPE_MIN_AMOUNT}'
                 )
 
-            valid_ingredient_amount.append(
+            ingr_exist = filter(
+                lambda item: item['ingredient'] == ingredient, valid_ingredient
+            )
+            if len(list(ingr_exist)) != 0:
+                raise ValidationError(
+                    f'<{ingredient.name}> повторяется в рецепте'
+                )
+
+            valid_ingredient.append(
                 {'ingredient': ingredient, 'amount': amount}
             )
 
         data['name'] = name
         data['tags'] = tags
-        data['ingredients'] = valid_ingredient_amount
+        data['ingredients'] = valid_ingredient
         data['author'] = self.context.get('request').user
         return data
 
